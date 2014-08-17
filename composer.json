@@ -1,7 +1,7 @@
 {
 	"name": "mdmsoft/yii2-ar-behaviors",
 	"description": "Behaviors for Yii2",
-	"keywords": ["yii", "behavior", "activerecord"],
+	"keywords": ["yii2", "behavior", "activerecord"],
 	"type": "yii2-extension",
 	"license": "BSD-3-Clause",
 	"support": {
