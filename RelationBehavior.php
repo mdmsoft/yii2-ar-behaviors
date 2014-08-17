@@ -15,10 +15,10 @@ class RelationBehavior extends \yii\base\Behavior
 {
 
     /**
-     * 
-     * @param string $relations
-     * @param array $data
-     * @param array $options
+     *
+     * @param  string  $relations
+     * @param  array   $data
+     * @param  array   $options
      * @return boolean Description
      */
     public function saveRelation($relations, $data, $options = [])
@@ -32,6 +32,7 @@ class RelationBehavior extends \yii\base\Behavior
             foreach ($relations as $relationName) {
                 $error = $this->doSaveRelation($model, $relationName, $data, $options) || $error;
             }
+
             return $error ? -1 : 1;
         } else {
             return false;
@@ -169,6 +170,7 @@ class RelationBehavior extends \yii\base\Behavior
         }
 
         $model->populateRelation($relationName, $population);
+
         return $error;
     }
 }
