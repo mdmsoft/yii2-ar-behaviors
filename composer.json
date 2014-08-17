@@ -1,0 +1,25 @@
+{
+	"name": "mdmsoft/yii2-behaviors",
+	"description": "Behaviors for Yii2",
+	"keywords": ["yii", "behavior", "activerecord"],
+	"type": "yii2-extension",
+	"license": "BSD-3-Clause",
+	"support": {
+		"issues": "https://github.com/mdmsoft/yii2-behaviors/issues",
+		"source": "https://github.com/mdmsoft/yii2-behaviors"
+	},
+	"authors": [
+		{
+			"name": "Misbahul Munir",
+			"email": "misbahuldmunir@gmail.com"
+		}
+	],
+	"require": {
+		"yiisoft/yii2": "*"
+	},
+	"autoload": {
+		"psr-4": {
+			"mdm\\behaviors\\ar\\": "ar"
+		}
+	}
+}
