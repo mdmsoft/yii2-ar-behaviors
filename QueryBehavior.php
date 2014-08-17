@@ -2,14 +2,23 @@
 
 namespace mdm\behaviors\ar;
 
+use yii\db\ActiveQuery;
+
 /**
  * Description of QueryBehavior
  *
- * @property \yii\db\ActiveQuery $owner
+ * @property ActiveQuery $owner
  * @author Misbahul D Munir (mdmunir) <misbahuldmunir@gmail.com>
  */
 class QueryBehavior extends \yii\base\Behavior
 {
+
+    public function events()
+    {
+        return [
+            ActiveQuery::EVENT_INIT => 'applyDefaultScope'
+        ];
+    }
 
     public function __call($name, $params)
     {
@@ -21,12 +30,19 @@ class QueryBehavior extends \yii\base\Behavior
 
     public function hasMethod($name)
     {
-        if (method_exists($this->owner->modelClass, $name)) {
+        if ($this->owner->modelClass && method_exists($this->owner->modelClass, $name)) {
             $ref = new \ReflectionMethod($this->owner->modelClass, $name);
 
             return $ref->isStatic() && count($ref->getParameters()) >= 1;
         }
 
         return false;
+    }
+
+    public function applyDefaultScope()
+    {
+        if ($this->hasMethod('defaultScope')) {
+            call_user_func([$this->owner->modelClass, $name], $this->owner);
+        }
     }
 }
