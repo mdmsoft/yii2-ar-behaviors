@@ -10,14 +10,15 @@ use yii\db\ActiveQuery;
  * @property ActiveQuery $owner
  * @author Misbahul D Munir (mdmunir) <misbahuldmunir@gmail.com>
  */
-class QueryBehavior extends \yii\base\Behavior
+class QueryScopeBehavior extends \yii\base\Behavior
 {
 
-    public function events()
+    public function attach($owner)
     {
-        return [
-            ActiveQuery::EVENT_INIT => 'applyDefaultScope'
-        ];
+        parent::attach($owner);
+        if ($this->hasMethod('defaultScope')) {
+            call_user_func([$owner->modelClass, 'defaultScope'], $owner);
+        }
     }
 
     public function __call($name, $params)
@@ -37,12 +38,5 @@ class QueryBehavior extends \yii\base\Behavior
         }
 
         return false;
-    }
-
-    public function applyDefaultScope()
-    {
-        if ($this->hasMethod('defaultScope')) {
-            call_user_func([$this->owner->modelClass, $name], $this->owner);
-        }
     }
 }

@@ -18,7 +18,7 @@ class Bootstrap implements \yii\base\BootstrapInterface
     {
         if (\yii\helpers\ArrayHelper::getValue($app->params, 'mdm.behaviors.ar.scope', true)) {
             \Yii::$container->set('yii\db\ActiveQuery', [
-                'as scope' => 'mdm\behaviors\ar\QueryBehavior'
+                'as scope' => 'mdm\behaviors\ar\QueryScopeBehavior'
             ]);
         }
     }
