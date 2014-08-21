@@ -48,3 +48,8 @@ Sales::find()->all(); // apply defaultScope
 Sales::find()->bigOrder(200)->all();
 
 ```
+
+ExtendedBehavior
+----------------
+Extend `Activerecord` with out inheriting :grinning: .
+This behavior use to merge two table and treated as one ActiveRecord.
