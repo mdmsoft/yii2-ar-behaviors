@@ -24,21 +24,24 @@ class RelationBehavior extends \yii\base\Behavior
     public function saveRelation($relations, $data, $options = [])
     {
         $model = $this->owner;
-        if ($model->load($data)) {
-            $error = !$model->save();
-            if (!is_array($relations)) {
-                $relations = preg_split('/\s*,\s*/', trim($relations), -1, PREG_SPLIT_NO_EMPTY);
-            }
-            foreach ($relations as $relationName) {
-                $error = $this->doSaveRelation($model, $relationName, $data, $options) || $error;
-            }
-
-            return $error ? -1 : 1;
-        } else {
-            return false;
+        if (!is_array($relations)) {
+            $relations = preg_split('/\s*,\s*/', trim($relations), -1, PREG_SPLIT_NO_EMPTY);
         }
+        $success = true;
+        foreach ($relations as $relationName) {
+            $success = $this->doSaveRelation($model, $relationName, $data, $options) && $success;
+        }
+        return $success;
     }
 
+    /**
+     * 
+     * @param \yii\db\ActiveRecord $model
+     * @param string $relationName
+     * @param array $data
+     * @param array $options
+     * @return boolean
+     */
     protected function doSaveRelation($model, $relationName, $data, $options)
     {
         $relation = $model->getRelation($relationName);
@@ -70,7 +73,6 @@ class RelationBehavior extends \yii\base\Behavior
                     $dataDetail = array_merge($options['extra'], $dataDetail);
                 }
                 $dataDetail = array_merge($dataDetail, $links);
-
                 // primary keys of detail
                 $detailPks = [];
                 $pks = $class::primaryKey();
@@ -171,6 +173,6 @@ class RelationBehavior extends \yii\base\Behavior
 
         $model->populateRelation($relationName, $population);
 
-        return $error;
+        return !$error;
     }
 }
