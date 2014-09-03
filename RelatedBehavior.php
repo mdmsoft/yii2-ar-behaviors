@@ -6,44 +6,48 @@ use Yii;
 use yii\helpers\ArrayHelper;
 
 /**
- * Description of RelationBehavior
+ * Description of RelatedBehavior
  *
  * @property \yii\db\ActiveRecord $owner Description
  * @author Misbahul D Munir (mdmunir) <misbahuldmunir@gmail.com>
  */
-class RelationBehavior extends \yii\base\Behavior
+class RelatedBehavior extends \yii\base\Behavior
 {
+    public $extraData;
+    public $beforeRValidate;
+    public $beforeRSave;
+    public $afterRSave;
 
     /**
      *
      * @param  string  $relations
      * @param  array   $data
-     * @param  array   $options
+     * @param  boolean   $save
      * @return boolean Description
      */
-    public function saveRelation($relations, $data, $options = [])
+    public function saveRelated($relations, $data, $save = true)
     {
-        $model = $this->owner;
         if (!is_array($relations)) {
             $relations = preg_split('/\s*,\s*/', trim($relations), -1, PREG_SPLIT_NO_EMPTY);
         }
-        $success = true;
+        $saved = $save;
         foreach ($relations as $relationName) {
-            $success = $this->doSaveRelation($model, $relationName, $data, $options) && $success;
+            $saved = $this->doSaveRelated($relationName, $data, $saved);
         }
-        return $success;
+
+        return $saved;
     }
 
     /**
-     * 
-     * @param \yii\db\ActiveRecord $model
-     * @param string $relationName
-     * @param array $data
-     * @param array $options
+     *
+     * @param  string  $relationName
+     * @param  array   $data
+     * @param  boolean $save
      * @return boolean
      */
-    protected function doSaveRelation($model, $relationName, $data, $options)
+    protected function doSaveRelated($relationName, $data, $save)
     {
+        $model = $this->owner;
         $relation = $model->getRelation($relationName);
 
         // link of relation
@@ -60,6 +64,7 @@ class RelationBehavior extends \yii\base\Behavior
         } else {
             $children = $relation->one();
         }
+        $pks = $class::primaryKey();
 
         $formName = (new $class)->formName();
         $postDetails = ArrayHelper::getValue($data, $formName, []);
@@ -69,13 +74,13 @@ class RelationBehavior extends \yii\base\Behavior
         if ($multiple) {
             $population = [];
             foreach ($postDetails as $index => $dataDetail) {
-                if (isset($options['extra'])) {
-                    $dataDetail = array_merge($options['extra'], $dataDetail);
+                if (isset($this->extraData)) {
+                    $dataDetail = array_merge($this->extraData, $dataDetail);
                 }
                 $dataDetail = array_merge($dataDetail, $links);
-                // primary keys of detail
+
+                // set primary key of detail
                 $detailPks = [];
-                $pks = $class::primaryKey();
                 if (count($pks) === 1) {
                     $detailPks = isset($dataDetail[$pks[0]]) ? $dataDetail[$pks[0]] : null;
                 } else {
@@ -86,6 +91,7 @@ class RelationBehavior extends \yii\base\Behavior
 
                 $detail = null;
                 // get from current relation
+                // if has child with same primary key, use this
                 if (empty($relation->indexBy)) {
                     foreach ($children as $i => $child) {
                         if ($child->getPrimaryKey() === $detailPks) {
@@ -104,8 +110,8 @@ class RelationBehavior extends \yii\base\Behavior
 
                 $detail->load($dataDetail, '');
 
-                if (isset($options['beforeValidate'])) {
-                    call_user_func($options['beforeValidate'], $detail, $index);
+                if (isset($this->beforeRValidate)) {
+                    call_user_func($this->beforeRValidate, $detail, $index);
                 }
                 $error = !$detail->validate() || $error;
                 $population[$index] = $detail;
@@ -113,24 +119,25 @@ class RelationBehavior extends \yii\base\Behavior
         } else {
             $population = $children === null ? new $class : $children;
             $dataDetail = $postDetails;
-            if (isset($options['extra'])) {
-                $dataDetail = array_merge($options['extra'], $dataDetail);
+            if (isset($this->extraData)) {
+                $dataDetail = array_merge($this->extraData, $dataDetail);
             }
             $dataDetail = array_merge($dataDetail, $links);
             $population->load($dataDetail, '');
-            if (isset($options['beforeValidate'])) {
-                call_user_func($options['beforeValidate'], $population, null);
+            if (isset($this->beforeRValidate)) {
+                call_user_func($this->beforeRValidate, $population, null);
             }
             $error = !$population->validate() || $error;
         }
 
-        if (!$error) {
-            // delete current children before inserting new
+        if (!$error && $save) {
             if ($multiple) {
+                // delete current children before inserting new
                 $linkFilter = [];
-                $columns = array_flip($class::primaryKey());
+                $columns = array_flip($pks);
                 foreach ($relation->link as $from => $to) {
                     $linkFilter[$from] = $model->$to;
+                    // reduce primary key that linked to parent
                     if (isset($columns[$from])) {
                         unset($columns[$from]);
                     }
@@ -152,27 +159,25 @@ class RelationBehavior extends \yii\base\Behavior
                     $class::deleteAll($linkFilter);
                 }
                 foreach ($population as $index => $detail) {
-                    if (isset($options['beforeSave'])) {
-                        call_user_func($options['beforeSave'], $detail, $index);
-                    }
-                    $detail->save(false);
-                    if (isset($options['afterSave'])) {
-                        call_user_func($options['afterSave'], $detail, $index);
+                    if (!isset($this->beforeRSave) || call_user_func($this->beforeRSave, $detail, $index) !== false) {
+                        $detail->save(false);
+                        if (isset($this->afterRSave)) {
+                            call_user_func($this->afterRSave, $detail, $index);
+                        }
                     }
                 }
             } else {
-                if (isset($options['beforeSave'])) {
-                    call_user_func($options['beforeSave'], $population, null);
-                }
-                $population->save(false);
-                if (isset($options['afterSave'])) {
-                    call_user_func($options['afterSave'], $population, null);
+                if (!isset($this->beforeRSave) || call_user_func($this->beforeRSave, $population, null) !== false) {
+                    $population->save(false);
+                    if (isset($this->beforeRSave)) {
+                        call_user_func($this->beforeRSave, $population, null);
+                    }
                 }
             }
         }
 
         $model->populateRelation($relationName, $population);
 
-        return !$error;
+        return !$error && $save;
     }
 }
