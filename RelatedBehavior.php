@@ -25,14 +25,14 @@ class RelatedBehavior extends \yii\base\Behavior
      * @param  boolean   $save
      * @return boolean Description
      */
-    public function saveRelated($relations, $data, $save = true)
+    public function saveRelated($relations, $data, $save = true, $nameMap = [])
     {
         if (!is_array($relations)) {
             $relations = preg_split('/\s*,\s*/', trim($relations), -1, PREG_SPLIT_NO_EMPTY);
         }
         $saved = $save;
         foreach ($relations as $relationName) {
-            $saved = $this->doSaveRelated($relationName, $data, $saved);
+            $saved = $this->doSaveRelated($relationName, $data, $saved, $nameMap);
         }
 
         return $saved;
@@ -45,7 +45,7 @@ class RelatedBehavior extends \yii\base\Behavior
      * @param  boolean $save
      * @return boolean
      */
-    protected function doSaveRelated($relationName, $data, $save)
+    protected function doSaveRelated($relationName, $data, $save, $nameMap)
     {
         $model = $this->owner;
         $relation = $model->getRelation($relationName);
@@ -67,7 +67,13 @@ class RelatedBehavior extends \yii\base\Behavior
         $pks = $class::primaryKey();
 
         $formName = (new $class)->formName();
-        $postDetails = ArrayHelper::getValue($data, $formName, []);
+        if (!isset($nameMap[$formName])) {
+            $postDetails = ArrayHelper::getValue($data, $formName, []);
+        } elseif ($nameMap[$formName] != '') {
+            $postDetails = ArrayHelper::getValue($data, $nameMap[$formName], []);
+        } else {
+            $postDetails = $data;
+        }
 
         /* @var $detail \yii\db\ActiveRecord */
         $error = false;
