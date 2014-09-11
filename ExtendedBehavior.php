@@ -63,17 +63,21 @@ class ExtendedBehavior extends \yii\base\Behavior
 
     public function canGetProperty($name, $checkVars = true)
     {
-        return $this->_relation->canGetProperty($name, $checkVars) || parent::canGetProperty($name, $checkVars);
+        return $this->_relation->hasAttribute($name) || 
+            $this->_relation->canGetProperty($name, $checkVars) || 
+            parent::canGetProperty($name, $checkVars);
     }
 
     public function canSetProperty($name, $checkVars = true)
     {
-        return $this->_relation->canSetProperty($name, $checkVars) || parent::canSetProperty($name, $checkVars);
+        return $this->_relation->hasAttribute($name) || 
+            $this->_relation->canSetProperty($name, $checkVars) || 
+            parent::canSetProperty($name, $checkVars);
     }
 
     public function __get($name)
     {
-        if ($this->_relation->canGetProperty($name)) {
+        if ($this->_relation->hasAttribute($name) || $this->_relation->canGetProperty($name)) {
             return $this->_relation->$name;
         } else {
             return parent::__get($name);
@@ -82,7 +86,7 @@ class ExtendedBehavior extends \yii\base\Behavior
 
     public function __set($name, $value)
     {
-        if ($this->_relation->canGetProperty($name)) {
+        if ($this->_relation->hasAttribute($name) || $this->_relation->canGetProperty($name)) {
             $this->_relation->$name = $value;
         } else {
             parent::__set($name, $value);
