@@ -22,14 +22,16 @@ class RelatedBehavior extends \yii\base\Behavior
 
     /**
      *
-     * @param  string  $relations
+     * @param  string  $relationName
      * @param  array   $data
-     * @param  boolean   $save
+     * @param  boolean $saved
+     * @param  mixed   $scope
+     * @param  mixed   $scenario
      * @return boolean Description
      */
-    public function saveRelated($relationName, $data, $saved = true, $scope = null)
+    public function saveRelated($relationName, $data, $saved = true, $scope = null, $scenario = null)
     {
-        return $this->doSaveRelated($relationName, $data, $saved, $scope);
+        return $this->doSaveRelated($relationName, $data, $saved, $scope, $scenario);
     }
 
     /**
@@ -37,9 +39,11 @@ class RelatedBehavior extends \yii\base\Behavior
      * @param  string  $relationName
      * @param  array   $data
      * @param  boolean $save
+     * @param  mixed   $scope
+     * @param  mixed   $scenario
      * @return boolean
      */
-    protected function doSaveRelated($relationName, $data, $save, $scope)
+    protected function doSaveRelated($relationName, $data, $save, $scope, $scenario)
     {
         $model = $this->owner;
         $relation = $model->getRelation($relationName);
@@ -76,7 +80,7 @@ class RelatedBehavior extends \yii\base\Behavior
         if ($multiple) {
             $population = [];
             foreach ($postDetails as $index => $dataDetail) {
-                if (isset($this->extraData)) {
+                if ($this->extraData !== null) {
                     $dataDetail = array_merge($this->extraData, $dataDetail);
                 }
                 $dataDetail = array_merge($dataDetail, $links);
@@ -109,7 +113,9 @@ class RelatedBehavior extends \yii\base\Behavior
                 if ($detail === null) {
                     $detail = new $class;
                 }
-
+                if ($scenario !== null) {
+                    $detail->setScenario($scenario);
+                }
                 $detail->load($dataDetail, '');
 
                 if (isset($this->beforeRValidate)) {
@@ -122,12 +128,16 @@ class RelatedBehavior extends \yii\base\Behavior
                 $population[$index] = $detail;
             }
         } else {
+            /* @var $population \yii\db\ActiveRecord */
             $population = $children === null ? new $class : $children;
             $dataDetail = $postDetails;
             if (isset($this->extraData)) {
                 $dataDetail = array_merge($this->extraData, $dataDetail);
             }
             $dataDetail = array_merge($dataDetail, $links);
+            if ($scenario !== null) {
+                $population->setScenario($scenario);
+            }
             $population->load($dataDetail, '');
             if (isset($this->beforeRValidate)) {
                 call_user_func($this->beforeRValidate, $population, null);
@@ -188,17 +198,17 @@ class RelatedBehavior extends \yii\base\Behavior
 
         return !$error && $save;
     }
-    
+
     /**
-     * 
-     * @param string $relationName
+     *
+     * @param  string  $relationName
      * @return boolean
      */
-    public function hasRelatedErrors($relationName=null)
+    public function hasRelatedErrors($relationName = null)
     {
-        if($relationName === null){
+        if ($relationName === null) {
             return !empty($this->_relatedErrors);
-        }  else {
+        } else {
             return !empty($this->_relatedErrors[$relationName]);
         }
     }
