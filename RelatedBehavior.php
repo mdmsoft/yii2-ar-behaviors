@@ -194,7 +194,7 @@ class RelatedBehavior extends \yii\base\Behavior
      * @param string $relationName
      * @return boolean
      */
-    public function hasRelatedError($relationName=null)
+    public function hasRelatedErrors($relationName=null)
     {
         if($relationName === null){
             return !empty($this->_relatedErrors);
