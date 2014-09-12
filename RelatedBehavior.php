@@ -17,6 +17,8 @@ class RelatedBehavior extends \yii\base\Behavior
     public $beforeRValidate;
     public $beforeRSave;
     public $afterRSave;
+    public $clearError = true;
+    private $_relatedErrors = [];
 
     /**
      *
@@ -25,17 +27,9 @@ class RelatedBehavior extends \yii\base\Behavior
      * @param  boolean   $save
      * @return boolean Description
      */
-    public function saveRelated($relations, $data, $save = true, $nameMap = [])
+    public function saveRelated($relationName, $data, $saved = true, $scope = null)
     {
-        if (!is_array($relations)) {
-            $relations = preg_split('/\s*,\s*/', trim($relations), -1, PREG_SPLIT_NO_EMPTY);
-        }
-        $saved = $save;
-        foreach ($relations as $relationName) {
-            $saved = $this->doSaveRelated($relationName, $data, $saved, $nameMap);
-        }
-
-        return $saved;
+        return $this->doSaveRelated($relationName, $data, $saved, $scope);
     }
 
     /**
@@ -45,7 +39,7 @@ class RelatedBehavior extends \yii\base\Behavior
      * @param  boolean $save
      * @return boolean
      */
-    protected function doSaveRelated($relationName, $data, $save, $nameMap)
+    protected function doSaveRelated($relationName, $data, $save, $scope)
     {
         $model = $this->owner;
         $relation = $model->getRelation($relationName);
@@ -66,15 +60,17 @@ class RelatedBehavior extends \yii\base\Behavior
         }
         $pks = $class::primaryKey();
 
-        $formName = (new $class)->formName();
-        if (!isset($nameMap[$formName])) {
-            $postDetails = ArrayHelper::getValue($data, $formName, []);
-        } elseif ($nameMap[$formName] != '') {
-            $postDetails = ArrayHelper::getValue($data, $nameMap[$formName], []);
-        } else {
+        if ($scope === null) {
+            $postDetails = ArrayHelper::getValue($data, (new $class)->formName(), []);
+        } elseif ($scope === false) {
             $postDetails = $data;
+        } else {
+            $postDetails = ArrayHelper::getValue($data, $scope, []);
         }
 
+        if ($this->clearError) {
+            $this->_relatedErrors[$relationName] = [];
+        }
         /* @var $detail \yii\db\ActiveRecord */
         $error = false;
         if ($multiple) {
@@ -119,7 +115,10 @@ class RelatedBehavior extends \yii\base\Behavior
                 if (isset($this->beforeRValidate)) {
                     call_user_func($this->beforeRValidate, $detail, $index);
                 }
-                $error = !$detail->validate() || $error;
+                if (!$detail->validate()) {
+                    $this->_relatedErrors[$relationName][$index] = $detail->getFirstErrors();
+                    $error = true;
+                }
                 $population[$index] = $detail;
             }
         } else {
@@ -133,7 +132,10 @@ class RelatedBehavior extends \yii\base\Behavior
             if (isset($this->beforeRValidate)) {
                 call_user_func($this->beforeRValidate, $population, null);
             }
-            $error = !$population->validate() || $error;
+            if (!$population->validate()) {
+                $this->_relatedErrors[$relationName] = $population->getFirstErrors();
+                $error = true;
+            }
         }
 
         if (!$error && $save) {
@@ -185,5 +187,19 @@ class RelatedBehavior extends \yii\base\Behavior
         $model->populateRelation($relationName, $population);
 
         return !$error && $save;
+    }
+    
+    /**
+     * 
+     * @param string $relationName
+     * @return boolean
+     */
+    public function hasRelatedError($relationName=null)
+    {
+        if($relationName === null){
+            return !empty($this->_relatedErrors);
+        }  else {
+            return !empty($this->_relatedErrors[$relationName]);
+        }
     }
 }
