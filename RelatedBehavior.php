@@ -178,7 +178,10 @@ class RelatedBehavior extends \yii\base\Behavior
                 }
                 foreach ($population as $index => $detail) {
                     if (!isset($this->beforeRSave) || call_user_func($this->beforeRSave, $detail, $index) !== false) {
-                        $detail->save(false);
+                        if (!$detail->save(false)) {
+                            $error = true;
+                            break;
+                        }
                         if (isset($this->afterRSave)) {
                             call_user_func($this->afterRSave, $detail, $index);
                         }
@@ -186,9 +189,12 @@ class RelatedBehavior extends \yii\base\Behavior
                 }
             } else {
                 if (!isset($this->beforeRSave) || call_user_func($this->beforeRSave, $population, null) !== false) {
-                    $population->save(false);
-                    if (isset($this->beforeRSave)) {
-                        call_user_func($this->beforeRSave, $population, null);
+                    if ($population->save(false)) {
+                        if (isset($this->beforeRSave)) {
+                            call_user_func($this->beforeRSave, $population, null);
+                        }
+                    } else {
+                        $error = true;
                     }
                 }
             }
