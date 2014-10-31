@@ -18,7 +18,7 @@ class RelatedBehavior extends \yii\base\Behavior
     public $beforeRSave;
     public $afterRSave;
     public $clearError = true;
-    private $_relatedErrors = [];
+    protected $_relatedErrors = [];
 
     /**
      *
