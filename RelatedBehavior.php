@@ -9,7 +9,8 @@ use yii\helpers\ArrayHelper;
  * RelatedBehavior
  * Use to save relation 
  *
- * @property \yii\db\ActiveRecord $owner Description
+ * @property \yii\db\ActiveRecord $owner
+ * @property array $relatedErrors
  * 
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
@@ -239,9 +240,23 @@ class RelatedBehavior extends \yii\base\Behavior
     public function hasRelatedErrors($relationName = null)
     {
         if ($relationName === null) {
-            return !empty($this->_relatedErrors);
+            foreach ($this->_relatedErrors as $errors) {
+                if (!empty($errors)) {
+                    return true;
+                }
+            }
+            return false;
         } else {
             return !empty($this->_relatedErrors[$relationName]);
+        }
+    }
+
+    public function getRelatedErrors($relationName = null)
+    {
+        if ($relationName === null) {
+            return $this->_relatedErrors;
+        } else {
+            return isset($this->_relatedErrors[$relationName]) ? $this->_relatedErrors[$relationName] : [];
         }
     }
 }
