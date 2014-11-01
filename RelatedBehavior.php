@@ -6,27 +6,53 @@ use Yii;
 use yii\helpers\ArrayHelper;
 
 /**
- * Description of RelatedBehavior
+ * RelatedBehavior
+ * Use to save relation 
  *
  * @property \yii\db\ActiveRecord $owner Description
- * @author Misbahul D Munir (mdmunir) <misbahuldmunir@gmail.com>
+ * 
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class RelatedBehavior extends \yii\base\Behavior
 {
+    /**
+     * @var array 
+     */
     public $extraData;
+
+    /**
+     * @var Closure Execute before relation validate
+     */
     public $beforeRValidate;
+
+    /**
+     * @var Closure Execute before relation save
+     */
     public $beforeRSave;
+
+    /**
+     * @var Closure Execute after relation save
+     */
     public $afterRSave;
+
+    /**
+     * @var boolean If true clear related error
+     */
     public $clearError = true;
+
+    /**
+     * @var array 
+     */
     protected $_relatedErrors = [];
 
     /**
-     *
+     * 
      * @param  string  $relationName
      * @param  array   $data
      * @param  boolean $saved
-     * @param  mixed   $scope
-     * @param  mixed   $scenario
+     * @param  boolean|string   $scope
+     * @param  string   $scenario
      * @return boolean Description
      */
     public function saveRelated($relationName, $data, $saved = true, $scope = null, $scenario = null)

@@ -8,7 +8,8 @@ use yii\validators\Validator;
 use yii\base\InvalidConfigException;
 
 /**
- * Description of ExtendedBehavior
+ * ExtendedBehavior
+ * One to one relation and treat related attribute as its own property
  *
  * @property \yii\db\BaseActiveRecord $owner
  *
@@ -17,23 +18,26 @@ use yii\base\InvalidConfigException;
 class ExtendedBehavior extends \yii\base\Behavior
 {
     /**
-     *
      * @var \yii\db\BaseActiveRecord
      */
     private $_relation;
 
     /**
-     *
+     * Relation model class name
      * @var string
      */
     public $relationClass;
 
     /**
-     *
+     * Relation key for to Model
+     * @see [[\yii\db\BaseActiveRecord::hasOne()]]
      * @var array
      */
     public $relationKey;
 
+    /**
+     * @inheritdoc
+     */
     public function events()
     {
         return[
@@ -44,6 +48,9 @@ class ExtendedBehavior extends \yii\base\Behavior
         ];
     }
 
+    /**
+     * @inheritdoc
+     */
     public function attach($owner)
     {
         parent::attach($owner);
@@ -61,6 +68,9 @@ class ExtendedBehavior extends \yii\base\Behavior
         }
     }
 
+    /**
+     * @inheritdoc
+     */
     public function canGetProperty($name, $checkVars = true)
     {
         return $this->_relation->hasAttribute($name) || 
@@ -68,6 +78,9 @@ class ExtendedBehavior extends \yii\base\Behavior
             parent::canGetProperty($name, $checkVars);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function canSetProperty($name, $checkVars = true)
     {
         return $this->_relation->hasAttribute($name) || 
@@ -75,6 +88,9 @@ class ExtendedBehavior extends \yii\base\Behavior
             parent::canSetProperty($name, $checkVars);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function __get($name)
     {
         if ($this->_relation->hasAttribute($name) || $this->_relation->canGetProperty($name)) {
@@ -84,6 +100,9 @@ class ExtendedBehavior extends \yii\base\Behavior
         }
     }
 
+    /**
+     * @inheritdoc
+     */
     public function __set($name, $value)
     {
         if ($this->_relation->hasAttribute($name) || $this->_relation->canGetProperty($name)) {
@@ -93,6 +112,9 @@ class ExtendedBehavior extends \yii\base\Behavior
         }
     }
 
+    /**
+     * @inheritdoc
+     */
     public function loadRelation()
     {
         if ($this->relationKey === null) {
@@ -119,7 +141,7 @@ class ExtendedBehavior extends \yii\base\Behavior
     }
 
     /**
-     *
+     * Execute after model saved
      * @param \yii\base\Event $event
      */
     public function afterSave($event)
@@ -130,6 +152,10 @@ class ExtendedBehavior extends \yii\base\Behavior
         $this->_relation->save();
     }
 
+    /**
+     * Execute after model deleted
+     * @param \yii\base\Event $event
+     */
     public function afterDelete($event)
     {
         $this->_relation->delete();
