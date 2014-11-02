@@ -198,10 +198,14 @@ class RelatedBehavior extends \yii\base\Behavior
                         $values[] = $value;
                     }
                     if (!empty($values)) {
-                        $class::deleteAll(['and', $linkFilter, ['in', $columns, $values]]);
+                        foreach ($class::find()->where(['and', $linkFilter, ['in', $columns, $values]])->all() as $related) {
+                            $related->delete();
+                        }
                     }
                 } else {
-                    $class::deleteAll($linkFilter);
+                    foreach ($class::find()->where($linkFilter)->all() as $related) {
+                        $related->delete();
+                    }
                 }
                 foreach ($population as $index => $detail) {
                     if (!isset($this->beforeRSave) || call_user_func($this->beforeRSave, $detail, $index) !== false) {
