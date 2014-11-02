@@ -1,28 +1,33 @@
 {
-	"name": "mdmsoft/yii2-ar-behaviors",
-	"description": "Behaviors for Yii2",
-	"keywords": ["yii2", "behavior", "activerecord"],
-	"type": "yii2-extension",
-	"license": "BSD-3-Clause",
-	"support": {
-		"issues": "https://github.com/mdmsoft/yii2-ar-behaviors/issues",
-		"source": "https://github.com/mdmsoft/yii2-ar-behaviors"
-	},
-	"authors": [
-		{
-			"name": "Misbahul Munir",
-			"email": "misbahuldmunir@gmail.com"
-		}
-	],
-	"require": {
-		"yiisoft/yii2": "*"
-	},
-	"autoload": {
-		"psr-4": {
-			"mdm\\behaviors\\ar\\": ""
-		}
-	},
-	"extra": {
-		"bootstrap": "mdm\\behaviors\\ar\\Bootstrap"
-	}
+    "name": "mdmsoft/yii2-ar-behaviors",
+    "description": "Behaviors for Yii2",
+    "keywords": ["yii2", "behavior", "activerecord", "query scope"],
+    "type": "yii2-extension",
+    "license": "BSD-3-Clause",
+    "support": {
+        "issues": "https://github.com/mdmsoft/yii2-ar-behaviors/issues",
+        "source": "https://github.com/mdmsoft/yii2-ar-behaviors"
+    },
+    "authors": [
+        {
+            "name": "Misbahul Munir",
+            "email": "misbahuldmunir@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "~2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "mdm\\behaviors\\ar\\": ""
+        }
+    },
+    "extra": {
+        "bootstrap": "mdm\\behaviors\\ar\\Bootstrap"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    }
 }
