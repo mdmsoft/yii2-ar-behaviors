@@ -23,9 +23,7 @@
         }
     },
     "extra": {
-        "bootstrap": "mdm\\behaviors\\ar\\Bootstrap"
-    },
-    "extra": {
+        "bootstrap": "mdm\\behaviors\\ar\\Bootstrap",
         "branch-alias": {
             "dev-master": "1.0.x-dev"
         }
