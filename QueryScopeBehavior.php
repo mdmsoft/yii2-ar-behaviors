@@ -8,7 +8,9 @@ use yii\db\ActiveQuery;
  * Description of QueryBehavior
  *
  * @property ActiveQuery $owner
- * @author Misbahul D Munir (mdmunir) <misbahuldmunir@gmail.com>
+ * 
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class QueryScopeBehavior extends \yii\base\Behavior
 {

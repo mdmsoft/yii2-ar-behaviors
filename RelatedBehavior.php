@@ -24,16 +24,25 @@ class RelatedBehavior extends \yii\base\Behavior
 
     /**
      * @var Closure Execute before relation validate
+     * 
+     * ```php
+     * function($model, $index){
+     *     // for hasOne relation, value or $index is null
+     * }
+     * ```
      */
     public $beforeRValidate;
 
     /**
      * @var Closure Execute before relation save
+     * @see [[$beforeRValidate]]
+     * If function return `false`, save will be canceled
      */
     public $beforeRSave;
 
     /**
      * @var Closure Execute after relation save
+     * @see [[$beforeRValidate]]
      */
     public $afterRSave;
 
@@ -48,13 +57,13 @@ class RelatedBehavior extends \yii\base\Behavior
     protected $_relatedErrors = [];
 
     /**
-     * 
-     * @param  string  $relationName
-     * @param  array   $data
-     * @param  boolean $saved
-     * @param  boolean|string   $scope
+     * Save related model(s) provided by `$data`.
+     * @param  string $relationName
+     * @param  array $data
+     * @param  boolean $saved if false, related model only be validated without saved.
+     * @param  boolean|string $scope
      * @param  string   $scenario
-     * @return boolean Description
+     * @return boolean true if success
      */
     public function saveRelated($relationName, $data, $saved = true, $scope = null, $scenario = null)
     {
@@ -62,13 +71,7 @@ class RelatedBehavior extends \yii\base\Behavior
     }
 
     /**
-     *
-     * @param  string  $relationName
-     * @param  array   $data
-     * @param  boolean $save
-     * @param  mixed   $scope
-     * @param  mixed   $scenario
-     * @return boolean
+     * @see [[saveRelated()]]
      */
     protected function doSaveRelated($relationName, $data, $save, $scope, $scenario)
     {
@@ -237,7 +240,7 @@ class RelatedBehavior extends \yii\base\Behavior
     }
 
     /**
-     *
+     * Check if relation has error.
      * @param  string  $relationName
      * @return boolean
      */
@@ -255,6 +258,11 @@ class RelatedBehavior extends \yii\base\Behavior
         }
     }
 
+    /**
+     * Get related error(s)
+     * @param string|null $relationName
+     * @return array
+     */
     public function getRelatedErrors($relationName = null)
     {
         if ($relationName === null) {

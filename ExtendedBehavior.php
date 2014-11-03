@@ -13,7 +13,8 @@ use yii\base\InvalidConfigException;
  *
  * @property \yii\db\BaseActiveRecord $owner
  *
- * @author Misbahul D Munir (mdmunir) <misbahuldmunir@gmail.com>
+ * @author Misbahul D Munir <misbahuldmunir@gmail.com>
+ * @since 1.0
  */
 class ExtendedBehavior extends \yii\base\Behavior
 {
