@@ -53,3 +53,60 @@ ExtendedBehavior
 ----------------
 Extend `Activerecord` with out inheriting :grinning: .
 This behavior use to merge two table and treated as one ActiveRecord.
+
+Example:
+We have model `CustomerDetail`
+
+```php
+/**
+ * @property integer $id
+ * @property string $full_name
+ * @property string $organisation
+ * @property string $address1
+ * @property string $address2
+ */
+class CustomerDetail extends ActiveRecord
+{
+    
+}
+```
+
+and model `Customer`
+
+```php
+/**
+ * @property integer $id
+ * @property string $name
+ * @property string $email
+ */
+class Customer extends ActiveRecord
+{
+    
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => 'mdm\behaviors\ar\ExtendedBehavior',
+                'relationClass' => CustomerDetail::className(),
+                'relationKey' => ['id' => 'id'],
+            ],
+        ];
+    }
+}
+```
+
+After that, we can access `CustomerDetail` property from `Customer` as their own property
+
+```php
+$model = new Customer();
+
+$model-name = 'Doflamingo';
+$model->organisation = 'Donquixote Family;
+$model->address = 'North Blue';
+
+$model->save(); // it will save this model and related model
+```
+
+RelatedBehavior
+---------------
+
