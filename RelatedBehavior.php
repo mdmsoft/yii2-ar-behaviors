@@ -87,12 +87,14 @@ class RelatedBehavior extends \yii\base\Behavior
         /* @var $class \yii\db\ActiveRecord */
         $class = $relation->modelClass;
         $multiple = $relation->multiple;
-        if ($multiple) {
-            $children = $relation->all();
-        } else {
-            $children = $relation->one();
+        
+        /* @var $children \yii\db\ActiveRecord[] */
+        $children = $model->$relationName;
+        $uniqueKeys = array_flip($class::primaryKey());
+        foreach ($relation->link as $from => $to) {
+            unset($uniqueKeys[$from]);
         }
-        $pks = $class::primaryKey();
+        $uniqueKeys = array_keys($uniqueKeys);
 
         if ($scope === null) {
             $postDetails = ArrayHelper::getValue($data, (new $class)->formName(), []);
@@ -115,22 +117,12 @@ class RelatedBehavior extends \yii\base\Behavior
                 }
                 $dataDetail = array_merge($dataDetail, $links);
 
-                // set primary key of detail
-                $detailPks = [];
-                if (count($pks) === 1) {
-                    $detailPks = isset($dataDetail[$pks[0]]) ? $dataDetail[$pks[0]] : null;
-                } else {
-                    foreach ($pks as $pkName) {
-                        $detailPks[$pkName] = isset($dataDetail[$pkName]) ? $dataDetail[$pkName] : null;
-                    }
-                }
-
                 $detail = null;
                 // get from current relation
                 // if has child with same primary key, use this
                 if (empty($relation->indexBy)) {
                     foreach ($children as $i => $child) {
-                        if ($child->getPrimaryKey() === $detailPks) {
+                        if ($this->checkEqual($child, $dataDetail, $uniqueKeys)) {
                             $detail = $child;
                             unset($children[$i]);
                             break;
@@ -157,6 +149,8 @@ class RelatedBehavior extends \yii\base\Behavior
                 }
                 $population[$index] = $detail;
             }
+//            \yii\helpers\VarDumper::dump($population, 10, true);
+//            die();
         } else {
             /* @var $population \yii\db\ActiveRecord */
             $population = $children === null ? new $class : $children;
@@ -182,31 +176,25 @@ class RelatedBehavior extends \yii\base\Behavior
             if ($multiple) {
                 // delete current children before inserting new
                 $linkFilter = [];
-                $columns = array_flip($pks);
                 foreach ($relation->link as $from => $to) {
                     $linkFilter[$from] = $model->$to;
-                    // reduce primary key that linked to parent
-                    if (isset($columns[$from])) {
-                        unset($columns[$from]);
-                    }
                 }
                 $values = [];
-                if (!empty($columns)) {
-                    $columns = array_keys($columns);
+                if (!empty($uniqueKeys)) {
                     foreach ($children as $child) {
                         $value = [];
-                        foreach ($columns as $column) {
+                        foreach ($uniqueKeys as $column) {
                             $value[$column] = $child[$column];
                         }
                         $values[] = $value;
                     }
                     if (!empty($values)) {
-                        foreach ($class::find()->where(['and', $linkFilter, ['in', $columns, $values]])->all() as $related) {
+                        foreach ($class::find()->andWhere(['and', $linkFilter, ['in', $uniqueKeys, $values]])->all() as $related) {
                             $related->delete();
                         }
                     }
                 } else {
-                    foreach ($class::find()->where($linkFilter)->all() as $related) {
+                    foreach ($class::find()->andWhere($linkFilter)->all() as $related) {
                         $related->delete();
                     }
                 }
@@ -270,5 +258,15 @@ class RelatedBehavior extends \yii\base\Behavior
         } else {
             return isset($this->_relatedErrors[$relationName]) ? $this->_relatedErrors[$relationName] : [];
         }
+    }
+
+    protected function checkEqual($model1, $model2, $keys)
+    {
+        foreach ($keys as $key) {
+            if ($model1[$key] != $model2[$key]) {
+                return false;
+            }
+        }
+        return true;
     }
 }
