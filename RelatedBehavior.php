@@ -175,28 +175,8 @@ class RelatedBehavior extends \yii\base\Behavior
         if (!$error && $save) {
             if ($multiple) {
                 // delete current children before inserting new
-                $linkFilter = [];
-                foreach ($relation->link as $from => $to) {
-                    $linkFilter[$from] = $model->$to;
-                }
-                $values = [];
-                if (!empty($uniqueKeys)) {
-                    foreach ($children as $child) {
-                        $value = [];
-                        foreach ($uniqueKeys as $column) {
-                            $value[$column] = $child[$column];
-                        }
-                        $values[] = $value;
-                    }
-                    if (!empty($values)) {
-                        foreach ($class::find()->andWhere(['and', $linkFilter, ['in', $uniqueKeys, $values]])->all() as $related) {
-                            $related->delete();
-                        }
-                    }
-                } else {
-                    foreach ($class::find()->andWhere($linkFilter)->all() as $related) {
-                        $related->delete();
-                    }
+                foreach ($children as $child) {
+                    $child->delete();
                 }
                 foreach ($population as $index => $detail) {
                     if (!isset($this->beforeRSave) || call_user_func($this->beforeRSave, $detail, $index) !== false) {
@@ -212,8 +192,8 @@ class RelatedBehavior extends \yii\base\Behavior
             } else {
                 if (!isset($this->beforeRSave) || call_user_func($this->beforeRSave, $population, null) !== false) {
                     if ($population->save(false)) {
-                        if (isset($this->beforeRSave)) {
-                            call_user_func($this->beforeRSave, $population, null);
+                        if (isset($this->afterRSave)) {
+                            call_user_func($this->afterRSave, $population, null);
                         }
                     } else {
                         $error = true;
