@@ -107,6 +107,39 @@ $model->address = 'North Blue';
 $model->save(); // it will save this model and related model
 ```
 
-RelatedBehavior
----------------
+RelationBehavior
+----------------
+Use to save model and its relation.
 
+```php
+class Order extends ActiveRecord
+{
+    public function getItems()
+    {
+        return $this->hasMany(Item::className(),['order_id'=>'id']);
+    }
+
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => 'mdm\behaviors\ar\RelationBehavior',
+                'beforeRSave' => function($item){
+                    return $item->qty != 0;
+                }
+            ],
+        ];
+    }
+}
+```
+
+usage
+
+```php
+$model = new Order();
+
+if($model->load(Yii::$app->request->post()){
+    $model->items = Yii::$app->request->post('Item',[]);
+    $model->save();
+}
+```
