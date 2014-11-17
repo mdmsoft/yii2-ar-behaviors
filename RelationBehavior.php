@@ -50,6 +50,11 @@ class RelationBehavior extends \yii\base\Behavior
     public $clearError = true;
 
     /**
+     * @var boolean 
+     */
+    public $deleteUnsaved = true;
+
+    /**
      * @var array 
      */
     private $_old_relations = [];
@@ -57,7 +62,7 @@ class RelationBehavior extends \yii\base\Behavior
     /**
      * @var array 
      */
-    private $_new_relations = [];
+    private $_process_relation = [];
 
     /**
      * @var array 
@@ -149,7 +154,7 @@ class RelationBehavior extends \yii\base\Behavior
             }
             $this->_old_relations[$name] = $children;
             $this->owner->populateRelation($name, $newChildren);
-            $this->_new_relations[$name] = $newChildren;
+            $this->_process_relation[$name] = true;
         } else {
             if ($children === null) {
                 $children = new $class;
@@ -162,7 +167,7 @@ class RelationBehavior extends \yii\base\Behavior
                 $children->$from = $this->owner->$to;
             }
             $this->owner->populateRelation($name, $children);
-            $this->_new_relations[$name] = $children;
+            $this->_process_relation[$name] = true;
         }
         return true;
     }
@@ -173,12 +178,16 @@ class RelationBehavior extends \yii\base\Behavior
     public function afterValidate()
     {
         /* @var $child \yii\db\ActiveRecord */
-        foreach ($this->_new_relations as $name => $children) {
+        foreach ($this->_process_relation as $name => $process) {
+            if (!$process) {
+                continue;
+            }
             if ($this->clearError) {
                 $this->_relatedErrors[$name] = [];
             }
             $error = false;
             $relation = $this->owner->getRelation($name);
+            $children = $this->owner->$name;
             if ($relation->multiple) {
                 foreach ($children as $index => $child) {
                     if (isset($this->beforeRValidate)) {
@@ -209,20 +218,23 @@ class RelationBehavior extends \yii\base\Behavior
      */
     public function afterSave()
     {
-        // delete old related
-        /* @var $child \yii\db\ActiveRecord */
-        foreach ($this->_old_relations as $name => $children) {
-            foreach ($children as $child) {
-                $child->delete();
+        foreach ($this->_process_relation as $name => $process) {
+            if (!$process) {
+                continue;
             }
-            unset($this->_old_relations[$name]);
-        }
-        // save new relation
-        foreach ($this->_new_relations as $name => $children) {
+            // delete old related
+            /* @var $child \yii\db\ActiveRecord */
+            if (isset($this->_old_relations[$name])) {
+                foreach ($this->_old_relations[$name] as $child) {
+                    $child->delete();
+                }
+                unset($this->_old_relations[$name]);
+            }
+            // save new relation
             $relation = $this->owner->getRelation($name);
             $link = $relation->link;
+            $children = $this->owner->$name;
             if ($relation->multiple) {
-                $newPopulated = [];
                 foreach ($children as $index => $child) {
                     foreach ($link as $from => $to) {
                         $child->$from = $this->owner->$to;
@@ -232,19 +244,12 @@ class RelationBehavior extends \yii\base\Behavior
                         if (isset($this->afterRSave)) {
                             call_user_func($this->afterRSave, $child, $index, $name);
                         }
-                        $newPopulated[$index] = $child;
-                    } else {
-                        if (!$child->getIsNewRecord()) {
-                            $child->delete();
-                        }
+                    } elseif ($this->deleteUnsaved && !$child->getIsNewRecord()) {
+                        $child->delete();
                     }
                 }
-                if ($relation->indexBy) {
-                    $this->owner->populateRelation($name, $newPopulated);
-                } else {
-                    $this->owner->populateRelation($name, array_values($newPopulated));
-                }
             } else {
+                /* @var $children \yii\db\ActiveRecord */
                 foreach ($link as $from => $to) {
                     $children->$from = $this->owner->$to;
                 }
@@ -252,11 +257,12 @@ class RelationBehavior extends \yii\base\Behavior
                     $children->save(false);
                     if (isset($this->afterRSave)) {
                         call_user_func($this->afterRSave, $children, null, $name);
+                    } elseif ($this->deleteUnsaved && !$children->getIsNewRecord()) {
+                        $child->delete();
                     }
                 }
-                $this->owner->populateRelation($name, $children);
             }
-            unset($this->_new_relations[$name]);
+            unset($this->_process_relation[$name]);
         }
     }
 
