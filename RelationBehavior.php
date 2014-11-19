@@ -55,6 +55,17 @@ class RelationBehavior extends \yii\base\Behavior
     public $deleteUnsaved = true;
 
     /**
+     * @var \Closure function to check is two model is equal.
+     * 
+     * ```
+     * function ($model1, $model2, $keys){
+     *     return $model1['id'] == $model2['id'];
+     * }
+     * ```
+     */
+    public $isEqual;
+
+    /**
      * @var array 
      */
     private $_old_relations = [];
@@ -130,7 +141,7 @@ class RelationBehavior extends \yii\base\Behavior
                 $newChild = null;
                 if (empty($relation->indexBy)) {
                     foreach ($children as $i => $child) {
-                        if ($this->checkEqual($child, $value, $uniqueKeys)) {
+                        if ($this->isEqual($child, $value, $uniqueKeys)) {
                             $newChild = $child;
                             unset($children[$i]);
                             break;
@@ -306,8 +317,11 @@ class RelationBehavior extends \yii\base\Behavior
      * @param array $keys
      * @return boolean
      */
-    protected function checkEqual($model1, $model2, $keys)
+    protected function isEqual($model1, $model2, $keys)
     {
+        if ($this->isEqual !== null) {
+            return call_user_func($this->isEqual, $model1, $model2, $keys);
+        }
         foreach ($keys as $key) {
             if ($model1[$key] != $model2[$key]) {
                 return false;
