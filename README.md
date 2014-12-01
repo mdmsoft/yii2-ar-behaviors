@@ -101,7 +101,7 @@ After that, we can access `CustomerDetail` property from `Customer` as their own
 $model = new Customer();
 
 $model-name = 'Doflamingo';
-$model->organisation = 'Donquixote Family;
+$model->organisation = 'Donquixote Family';
 $model->address = 'North Blue';
 
 $model->save(); // it will save this model and related model
