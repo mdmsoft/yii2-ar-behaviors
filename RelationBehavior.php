@@ -5,7 +5,27 @@ namespace mdm\behaviors\ar;
 use yii\db\ActiveRecord;
 
 /**
- * RelationBehavior
+ * Save related
+ * 
+ * ~~~
+ * $order = new Order();
+ * 
+ * // associated array
+ * $item1 = [
+ *     'product_id' => 1,
+ *     'qty' = 10,
+ * ];
+ * // as object
+ * $item2 = new Item();
+ * $item2->product_id = 2;
+ * 
+ * $order->items = [
+ *     $item1,
+ *     $item2,
+ * ];
+ * 
+ * $order->save();
+ * ~~~
  *
  * @property ActiveRecord $owner
  * 
@@ -152,12 +172,14 @@ class RelationBehavior extends \yii\base\Behavior
                     unset($children[$index]);
                 }
                 if ($newChild === null) {
-                    $newChild = new $class;
+                    $newChild = $value instanceof $class ? $value : new $class;
                 }
                 if (isset($this->relatedScenarios[$name])) {
                     $newChild->scenario = $this->relatedScenarios[$name];
                 }
-                $newChild->load($value, '');
+                if (!$value instanceof $class) {
+                    $newChild->load($value, '');
+                }
                 foreach ($link as $from => $to) {
                     $newChild->$from = $this->owner->$to;
                 }
@@ -168,12 +190,14 @@ class RelationBehavior extends \yii\base\Behavior
             $this->_process_relation[$name] = true;
         } else {
             if ($children === null) {
-                $children = new $class;
+                $children = $values instanceof $class ? $value : new $class;
             }
             if (isset($this->relatedScenarios[$name])) {
                 $children->scenario = $this->relatedScenarios[$name];
             }
-            $children->load($values, '');
+            if (!$values instanceof $class) {
+                $children->load($values, '');
+            }
             foreach ($link as $from => $to) {
                 $children->$from = $this->owner->$to;
             }
