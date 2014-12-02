@@ -3,6 +3,7 @@
 namespace mdm\behaviors\ar;
 
 use yii\db\ActiveRecord;
+use yii\helpers\ArrayHelper;
 
 /**
  * Save related
@@ -93,6 +94,11 @@ class RelationBehavior extends \yii\base\Behavior
     /**
      * @var array 
      */
+    private $_original_relations = [];
+
+    /**
+     * @var array 
+     */
     private $_process_relation = [];
 
     /**
@@ -133,7 +139,7 @@ class RelationBehavior extends \yii\base\Behavior
     /**
      * Populate relation
      * @param string $name
-     * @param array $values
+     * @param array||\yii\db\ActiveRecord||\yii\db\ActiveRecord[] $values
      * @return boolean
      */
     public function setRelated($name, $values)
@@ -150,8 +156,12 @@ class RelationBehavior extends \yii\base\Behavior
             unset($uniqueKeys[$from]);
         }
         $uniqueKeys = array_keys($uniqueKeys);
+        if (isset($this->_original_relations[$name])) {
+            $children = $this->_original_relations[$name];
+        } else {
+            $this->_original_relations[$name] = $children = $this->owner->$name;
+        }
 
-        $children = $this->owner->$name;
         if ($multiple) {
             $newChildren = [];
             foreach ($values as $index => $value) {
@@ -162,13 +172,26 @@ class RelationBehavior extends \yii\base\Behavior
                 if (empty($relation->indexBy)) {
                     foreach ($children as $i => $child) {
                         if ($this->isEqual($child, $value, $uniqueKeys)) {
-                            $newChild = $child;
+                            if ($value instanceof $class) {
+                                $newChild = $value;
+                                $newChild->isNewRecord = $child->isNewRecord;
+                                $newChild->oldAttributes = $child->oldAttributes;
+                            } else {
+                                $newChild = $child;
+                            }
                             unset($children[$i]);
                             break;
                         }
                     }
                 } elseif (isset($children[$index])) {
-                    $newChild = $children[$index];
+                    $child = $children[$index];
+                    if ($value instanceof $class) {
+                        $newChild = $value;
+                        $newChild->isNewRecord = $child->isNewRecord;
+                        $newChild->oldAttributes = $child->oldAttributes;
+                    } else {
+                        $newChild = $child;
+                    }
                     unset($children[$index]);
                 }
                 if ($newChild === null) {
@@ -189,20 +212,39 @@ class RelationBehavior extends \yii\base\Behavior
             $this->owner->populateRelation($name, $newChildren);
             $this->_process_relation[$name] = true;
         } else {
+            $newChild = null;
             if ($children === null) {
-                $children = $values instanceof $class ? $value : new $class;
+                if ($values !== null) {
+                    $newChild = $values instanceof $class ? $values : new $class;
+                    $this->_process_relation[$name] = true;
+                }
+            } else {
+                if ($values !== null) {
+                    $newChild = $values instanceof $class ? $values : $children;
+                    if ($values instanceof $class) {
+                        $newChild = $values;
+                        $newChild->oldAttributes = $children->oldAttributes;
+                        $newChild->isNewRecord = $children->isNewRecord;
+                    } else {
+                        $newChild = $children;
+                    }
+                } else {
+                    $this->_old_relations[$name] = [$children];
+                }
+                $this->_process_relation[$name] = true;
             }
-            if (isset($this->relatedScenarios[$name])) {
-                $children->scenario = $this->relatedScenarios[$name];
+            if ($newChild !== null) {
+                if (isset($this->relatedScenarios[$name])) {
+                    $newChild->scenario = $this->relatedScenarios[$name];
+                }
+                if (!$values instanceof $class) {
+                    $newChild->load($values, '');
+                }
+                foreach ($link as $from => $to) {
+                    $newChild->$from = $this->owner->$to;
+                }
             }
-            if (!$values instanceof $class) {
-                $children->load($values, '');
-            }
-            foreach ($link as $from => $to) {
-                $children->$from = $this->owner->$to;
-            }
-            $this->owner->populateRelation($name, $children);
-            $this->_process_relation[$name] = true;
+            $this->owner->populateRelation($name, $newChild);
         }
         return true;
     }
@@ -285,19 +327,21 @@ class RelationBehavior extends \yii\base\Behavior
                 }
             } else {
                 /* @var $children \yii\db\ActiveRecord */
-                foreach ($link as $from => $to) {
-                    $children->$from = $this->owner->$to;
-                }
-                if ($this->beforeRSave === null || call_user_func($this->beforeRSave, $children, null, $name) !== false) {
-                    $children->save(false);
-                    if (isset($this->afterRSave)) {
-                        call_user_func($this->afterRSave, $children, null, $name);
-                    } elseif ($this->deleteUnsaved && !$children->getIsNewRecord()) {
-                        $child->delete();
+                if ($children !== null) {
+                    foreach ($link as $from => $to) {
+                        $children->$from = $this->owner->$to;
+                    }
+                    if ($this->beforeRSave === null || call_user_func($this->beforeRSave, $children, null, $name) !== false) {
+                        $children->save(false);
+                        if (isset($this->afterRSave)) {
+                            call_user_func($this->afterRSave, $children, null, $name);
+                        } elseif ($this->deleteUnsaved && !$children->getIsNewRecord()) {
+                            $child->delete();
+                        }
                     }
                 }
             }
-            unset($this->_process_relation[$name]);
+            unset($this->_process_relation[$name], $this->_original_relations[$name]);
         }
     }
 
@@ -347,7 +391,7 @@ class RelationBehavior extends \yii\base\Behavior
             return call_user_func($this->isEqual, $model1, $model2, $keys);
         }
         foreach ($keys as $key) {
-            if ($model1[$key] != $model2[$key]) {
+            if (ArrayHelper::getValue($model1, $key) != ArrayHelper::getValue($model2, $key)) {
                 return false;
             }
         }
