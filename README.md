@@ -9,13 +9,13 @@ The preferred way to install this extension is through [composer](http://getcomp
 Either run
 
 ```
-php composer.phar require mdmsoft/yii2-ar-behaviors "*"
+php composer.phar require mdmsoft/yii2-ar-behaviors "~1.0"
 ```
 
 or add
 
 ```
-"mdmsoft/yii2-ar-behaviors": "*"
+"mdmsoft/yii2-ar-behaviors": "~1.0"
 ```
 
 to the require section of your `composer.json` file.
