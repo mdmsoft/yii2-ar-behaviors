@@ -4,6 +4,7 @@ namespace mdm\behaviors\ar;
 
 use Yii;
 use yii\helpers\ArrayHelper;
+use yii\validators\Validator;
 
 /**
  * Description of Bootstrap
@@ -24,5 +25,7 @@ class Bootstrap implements \yii\base\BootstrapInterface
                 'as scope' => 'mdm\behaviors\ar\QueryScopeBehavior'
             ]);
         }
+
+        Validator::$builtInValidators['relationUnique'] = 'mdm\behaviors\ar\RelationUniqueValidator';
     }
 }
