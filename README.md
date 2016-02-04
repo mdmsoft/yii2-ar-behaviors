@@ -143,3 +143,41 @@ if($model->load(Yii::$app->request->post()){
     $model->save();
 }
 ```
+
+RelationTrait
+-------------
+Similar with RelationBehavior
+
+```php
+class Order extends ActiveRecord
+{
+    use \mdm\behavior\ar\RelationTrait;
+
+    public function getItems()
+    {
+        return $this->hasMany(Item::className(),['order_id'=>'id']);
+    }
+
+    public function setItems($value)
+    {
+        $this->loadRelated('items', $value);
+    }
+
+    public function beforeRSave($item)
+    {
+        return $item->qty != 0;
+    }
+    
+}
+```
+
+usage
+
+```php
+$model = new Order();
+
+if($model->load(Yii::$app->request->post()){
+    $model->items = Yii::$app->request->post('Item',[]);
+    $model->save();
+}
+```
