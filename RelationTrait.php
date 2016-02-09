@@ -8,6 +8,8 @@ use yii\helpers\ArrayHelper;
 /**
  * Description of RelationTrait
  *
+ * @property array $relatedErrors
+ * 
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
@@ -45,6 +47,10 @@ trait RelationTrait
         parent::afterSave($insert, $changedAttributes);
     }
 
+    public function getRelatedErrors()
+    {
+        return $this->_relatedErrors;
+    }
     /**
      * Populate relation
      * @param string $name
