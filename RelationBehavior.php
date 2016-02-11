@@ -271,7 +271,8 @@ class RelationBehavior extends \yii\base\Behavior
                         call_user_func($this->beforeRValidate, $child, $index, $name);
                     }
                     if (!$child->validate()) {
-                        $this->_relatedErrors[$name][$index] = $child->getFirstErrors();
+                        $errors = $this->_relatedErrors[$name][$index] = $child->getFirstErrors();
+                        $this->addError($name, "{$index}: ".reset($errors));
                         $error = true;
                     }
                 }
@@ -280,7 +281,8 @@ class RelationBehavior extends \yii\base\Behavior
                     call_user_func($this->beforeRValidate, $children, null, $name);
                 }
                 if (!$children->validate()) {
-                    $this->_relatedErrors[$name] = $child->getFirstErrors();
+                    $errors = $this->_relatedErrors[$name] = $child->getFirstErrors();
+                    $this->addError($name, reset($errors));
                     $error = true;
                 }
             }

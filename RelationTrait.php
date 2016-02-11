@@ -51,6 +51,7 @@ trait RelationTrait
     {
         return $this->_relatedErrors;
     }
+
     /**
      * Populate relation
      * @param string $name
@@ -188,7 +189,8 @@ trait RelationTrait
                         $this->beforeRValidate($child, $index, $name);
                     }
                     if (!$child->validate()) {
-                        $this->_relatedErrors[$name][$index] = $child->getFirstErrors();
+                        $errors = $this->_relatedErrors[$name][$index] = $child->getFirstErrors();
+                        $this->addError($name, "{$index}: ".reset($errors));
                         $error = true;
                     }
                 }
@@ -197,7 +199,8 @@ trait RelationTrait
                     $this->beforeRValidate($children, null, $name);
                 }
                 if (!$children->validate()) {
-                    $this->_relatedErrors[$name] = $child->getFirstErrors();
+                    $errors = $this->_relatedErrors[$name] = $child->getFirstErrors();
+                    $this->addError($name, reset($errors));
                     $error = true;
                 }
             }
