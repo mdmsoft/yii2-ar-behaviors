@@ -190,7 +190,7 @@ trait RelationTrait
                     }
                     if (!$child->validate()) {
                         $errors = $this->_relatedErrors[$name][$index] = $child->getFirstErrors();
-                        $this->addError($name, "{$index}: ".reset($errors));
+                        $this->addError($name, "{$index}: " . reset($errors));
                         $error = true;
                     }
                 }
@@ -281,6 +281,9 @@ trait RelationTrait
     {
         if (method_exists($this, 'isEqual')) {
             return $this->isEqual($model1, $model2, $keys);
+        }
+        if (empty($keys)) {
+            return false;
         }
         foreach ($keys as $key) {
             if (ArrayHelper::getValue($model1, $key) != ArrayHelper::getValue($model2, $key)) {
