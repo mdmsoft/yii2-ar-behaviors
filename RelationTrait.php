@@ -204,9 +204,6 @@ trait RelationTrait
                     $error = true;
                 }
             }
-            if ($error) {
-                $this->addError($name, 'Related error');
-            }
         }
     }
 
