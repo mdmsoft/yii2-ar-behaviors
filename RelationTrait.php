@@ -190,7 +190,7 @@ trait RelationTrait
                     }
                     if (!$child->validate()) {
                         $errors = $this->_relatedErrors[$name][$index] = $child->getFirstErrors();
-                        $this->addError($name, "{$index}: " . reset($errors));
+                        $this->addError($name, "{$name}[{$index}]: " . reset($errors));
                         $error = true;
                     }
                 }
@@ -200,7 +200,7 @@ trait RelationTrait
                 }
                 if (!$children->validate()) {
                     $errors = $this->_relatedErrors[$name] = $child->getFirstErrors();
-                    $this->addError($name, reset($errors));
+                    $this->addError($name, "$name: " . reset($errors));
                     $error = true;
                 }
             }
