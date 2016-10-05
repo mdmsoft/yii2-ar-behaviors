@@ -272,7 +272,7 @@ class RelationBehavior extends \yii\base\Behavior
                     }
                     if (!$child->validate()) {
                         $errors = $this->_relatedErrors[$name][$index] = $child->getFirstErrors();
-                        $this->addError($name, "{$index}: ".reset($errors));
+                        $this->owner->addError($name, "{$index}: ".reset($errors));
                         $error = true;
                     }
                 }
@@ -282,7 +282,7 @@ class RelationBehavior extends \yii\base\Behavior
                 }
                 if (!$children->validate()) {
                     $errors = $this->_relatedErrors[$name] = $child->getFirstErrors();
-                    $this->addError($name, reset($errors));
+                    $this->owner->addError($name, reset($errors));
                     $error = true;
                 }
             }
