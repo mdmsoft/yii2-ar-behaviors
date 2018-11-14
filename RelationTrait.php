@@ -19,17 +19,14 @@ trait RelationTrait
      * @var array
      */
     private $_old_relations = [];
-
     /**
      * @var array
      */
     private $_original_relations = [];
-
     /**
      * @var array
      */
     private $_process_relation = [];
-
     /**
      * @var array
      */
@@ -80,7 +77,7 @@ trait RelationTrait
 
         if ($multiple) {
             $newChildren = [];
-            $values = $values? : [];
+            $values = $values ?: [];
             foreach ($values as $index => $value) {
                 // get from current relation
                 // if has child with same primary key, use this
@@ -188,6 +185,12 @@ trait RelationTrait
                     if ($handleValidate) {
                         $this->beforeRValidate($child, $index, $name);
                     }
+                    $event = new RelationEvent([
+                        'child' => $child,
+                        'relation' => $name,
+                        'index' => $index,
+                    ]);
+                    $this->trigger(RelationEvent::BEFORE_VALIDATE, $event);
                     if (!$child->validate()) {
                         $errors = $this->_relatedErrors[$name][$index] = $child->getFirstErrors();
                         $this->addError($name, "{$name}[{$index}]: " . reset($errors));
@@ -198,6 +201,11 @@ trait RelationTrait
                 if ($handleValidate) {
                     $this->beforeRValidate($children, null, $name);
                 }
+                $event = new RelationEvent([
+                    'child' => $child,
+                    'relation' => $name,
+                ]);
+                $this->trigger(RelationEvent::BEFORE_VALIDATE, $event);
                 if (!$children->validate()) {
                     $errors = $this->_relatedErrors[$name] = $child->getFirstErrors();
                     $this->addError($name, "$name: " . reset($errors));
@@ -238,11 +246,25 @@ trait RelationTrait
                     foreach ($link as $from => $to) {
                         $child->$from = $this->$to;
                     }
-                    if ($handleBefore === false || $this->beforeRSave($child, $index, $name) !== false) {
+                    $oke = $handleBefore === false || $this->beforeRSave($child, $index, $name) !== false;
+                    $event = new RelationEvent([
+                        'child' => $child,
+                        'relation' => $name,
+                        'index' => $index,
+                    ]);
+                    $this->trigger(RelationEvent::BEFORE_SAVE, $event);
+                    $oke = $oke && $event->isValid;
+                    if ($oke) {
                         $child->save(false);
                         if ($handleAfter) {
                             $this->afterRSave($child, $index, $name);
                         }
+                        $event = new RelationEvent([
+                            'child' => $child,
+                            'relation' => $name,
+                            'index' => $index,
+                        ]);
+                        $this->trigger(RelationEvent::AFTER_SAVE, $event);
                     } elseif ($delUnsaved && !$child->getIsNewRecord()) {
                         $child->delete();
                     }
@@ -253,13 +275,25 @@ trait RelationTrait
                     foreach ($link as $from => $to) {
                         $children->$from = $this->$to;
                     }
-                    if ($handleBefore === false || $this->beforeRSave($children, null, $name) !== false) {
+                    $oke = $handleBefore === false || $this->beforeRSave($children, null, $name) !== false;
+                    $event = new RelationEvent([
+                        'child' => $children,
+                        'relation' => $name,
+                    ]);
+                    $this->trigger(RelationEvent::BEFORE_SAVE, $event);
+                    $oke = $oke && $event->isValid;
+                    if ($oke) {
                         $children->save(false);
                         if ($handleAfter) {
                             $this->afterRSave($children, null, $name);
-                        } elseif ($delUnsaved && !$children->getIsNewRecord()) {
-                            $child->delete();
                         }
+                        $event = new RelationEvent([
+                            'child' => $children,
+                            'relation' => $name,
+                        ]);
+                        $this->trigger(RelationEvent::AFTER_SAVE, $event);
+                    } elseif ($delUnsaved && !$children->getIsNewRecord()) {
+                        $child->delete();
                     }
                 }
             }
