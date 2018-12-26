@@ -4,11 +4,13 @@ namespace mdm\behaviors\ar;
 
 use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
 
 /**
  * Description of RelationTrait
  *
  * @property array $relatedErrors
+ * @property array $relatedErrorMessages
  * 
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
@@ -31,6 +33,10 @@ trait RelationTrait
      * @var array
      */
     private $_relatedErrors = [];
+    /**
+     * @var array
+     */
+    private $_relatedErrorMessages = [];
 
     public function afterValidate()
     {
@@ -44,9 +50,22 @@ trait RelationTrait
         parent::afterSave($insert, $changedAttributes);
     }
 
+    /**
+     *
+     * @return array
+     */
     public function getRelatedErrors()
     {
         return $this->_relatedErrors;
+    }
+
+    /**
+     * Can be use to update ActiveForm message
+     * @return type
+     */
+    public function getRelatedErrorMessages()
+    {
+        return $this->_relatedErrorMessages;
     }
 
     /**
@@ -81,7 +100,7 @@ trait RelationTrait
             foreach ($values as $index => $value) {
                 // get from current relation
                 // if has child with same primary key, use this
-                /* @var $newChild \yii\db\ActiveRecord */
+                /* @var $newChild ActiveRecord */
                 $newChild = null;
                 if (empty($relation->indexBy)) {
                     foreach ($children as $i => $child) {
@@ -176,6 +195,7 @@ trait RelationTrait
             }
             if (!isset($this->clearError) || $this->clearError) {
                 $this->_relatedErrors[$name] = [];
+                $this->_relatedErrorMessages[$name] = [];
             }
             $error = false;
             $relation = $this->getRelation($name);
@@ -193,6 +213,9 @@ trait RelationTrait
                     $this->trigger(RelationEvent::BEFORE_VALIDATE, $event);
                     if (!$child->validate()) {
                         $errors = $this->_relatedErrors[$name][$index] = $child->getFirstErrors();
+                        foreach ($errors as $attribute => $message) {
+                            $this->_relatedErrorMessages[$name][Html::getInputId($child, "[$index]$attribute")] = $message;
+                        }
                         $this->addError($name, "{$name}[{$index}]: " . reset($errors));
                         $error = true;
                     }
@@ -208,6 +231,9 @@ trait RelationTrait
                 $this->trigger(RelationEvent::BEFORE_VALIDATE, $event);
                 if (!$children->validate()) {
                     $errors = $this->_relatedErrors[$name] = $child->getFirstErrors();
+                    foreach ($errors as $attribute => $message) {
+                        $this->_relatedErrorMessages[$name][Html::getInputId($child, $attribute)] = $message;
+                    }
                     $this->addError($name, "$name: " . reset($errors));
                     $error = true;
                 }
@@ -270,7 +296,7 @@ trait RelationTrait
                     }
                 }
             } else {
-                /* @var $children \yii\db\ActiveRecord */
+                /* @var $children ActiveRecord */
                 if ($children !== null) {
                     foreach ($link as $from => $to) {
                         $children->$from = $this->$to;
@@ -303,8 +329,8 @@ trait RelationTrait
 
     /**
      * Check is boot of model is equal
-     * @param \yii\db\ActiveRecord|array $model1
-     * @param \yii\db\ActiveRecord|array $model2
+     * @param ActiveRecord|array $model1
+     * @param ActiveRecord|array $model2
      * @param array $keys
      * @return boolean
      */
